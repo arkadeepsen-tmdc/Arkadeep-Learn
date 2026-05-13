@@ -1,0 +1,828 @@
+version: v1
+name: wf-customer-data-as
+type: workflow
+tags:
+  - customer
+workflow:
+  dag:
+    - name: customer-data-asen
+      description: geo-table
+      spec:
+        tags:
+          - customer
+        stack: flare:7.0
+        compute: runnable-default
+        stackSpec:
+          driver:
+            cores: 2
+            memory: 2000m
+          executor:
+            cores: 1
+            instances: 4
+            memory: 2000m
+          job:
+            explain: true
+            logLevel: INFO
+            inputs:
+              - name: customer_df
+                dataset: dataos://postgres:public/customers?acl=r
+                format: jdbc
+                options:
+                  driver: org.postgresql.Driver    
+
+            steps:
+              - sequence:
+                  - name: final_df
+                    sql: >    
+                        SELECT 
+                            *
+                        FROM customer_df
+
+
+
+            outputs:
+
+              - name: final_df
+                dataset: dataos://postgres:public/customer_dataas?acl=rw
+                driver: org.postgresql.Driver
+                format: jdbc
+                options:
+                  saveMode: overwrite
+                description: Data set from Icebase
+                tags:
+                  - Connect
+                title: Postgres Dataset
+
+          # sparkConf:
+
+              # # Shuffle Optimization
+              # - spark.sql.shuffle.partitions: 600
+              # - spark.default.parallelism: 600
+              # - spark.sql.files.maxPartitionBytes: 256MB
+              
+              # # Adaptive Execution
+              # - spark.sql.adaptive.enabled: true
+              # - spark.sql.adaptive.coalescePartitions.enabled: true
+              # - spark.sql.adaptive.skewJoin.enabled: true
+              # - spark.sql.adaptive.localShuffleReader.enabled: true
+              # - spark.sql.adaptive.autoBroadcastJoinThreshold: 500m
+              
+              # # Dynamic Allocation
+              # - spark.dynamicAllocation.enabled: true
+              # - spark.dynamicAllocation.executorIdleTimeout: 60s
+              # - spark.dynamicAllocation.minExecutors: 4
+              # - spark.dynamicAllocation.maxExecutors: 60
+              # - spark.dynamicAllocation.shuffleTracking.enabled: true
+
+
+
+    # - name: geo-table-30
+    #   description: geo-table
+    #   spec:
+    #     tags:
+    #       - Lenovo
+    #     stack: flare:7.0
+    #     compute: ${RUNNABLE_COMPUTE}
+    #     stackSpec:
+    #       driver:
+    #         cores: ${ROLLUP_WF_DRIVER_CORES}
+    #         memory: ${ROLLUP_WF_DRIVER_MEMORY}
+    #       executor:
+    #         cores: ${ROLLUP_WF_EXECUTOR_CORES}
+    #         instances: 4
+    #         memory: ${ROLLUP_WF_EXECUTOR_MEMORY}
+    #       job:
+    #         explain: true
+    #         logLevel: INFO
+    #         inputs:
+    #           - name: geo_mapping
+    #             dataset: dataos://userengagementoutputdepot:output/geo_mapping?acl=rw
+    #             format: Iceberg    
+
+    #           - name: flattened
+    #             dataset: dataos://userengagementoutputdepot:uesdk/flattened_main_base_table?acl=rw
+    #             format: Iceberg      
+
+    #         steps:
+    #           - sequence:
+    #               - name: deduped
+    #                 sql: >    
+    #                     SELECT 
+    #                         rollup_type,
+    #                         event_date,
+    #                         action,
+    #                         geo,
+    #                         product_id,
+    #                         anonymous_device_idv1,
+    #                         platform,
+    #                         count(name) as pageview_count
+    #                     FROM flattened
+    #                     WHERE rollup_type in ('last_30_days')
+    #                     GROUP BY
+    #                        1,2,3,4,5,6,7
+
+    #               - name: first_seen
+    #                 sql: >
+    #                   SELECT
+    #                     rollup_type,
+    #                     action,
+    #                     geo,
+    #                     product_id,
+    #                     anonymous_device_idv1,
+    #                     platform,
+    #                     MIN(event_date) AS first_seen_date
+    #                   FROM deduped
+    #                   GROUP BY rollup_type, action, geo, product_id, platform, anonymous_device_idv1
+
+    #               - name: daily_activity
+    #                 sql: >
+    #                     SELECT
+    #                       event_date,
+    #                       rollup_type,
+    #                       action,
+    #                       geo,
+    #                       product_id,
+    #                       platform,
+    #                       sum(pageview_count) as pageview_count,
+    #                       COUNT(DISTINCT anonymous_device_idv1) AS daily_activity_count
+    #                     FROM deduped
+    #                     GROUP BY event_date, rollup_type, action, geo, product_id, platform
+
+    #               - name: daily_new
+    #                 sql: >
+    #                   SELECT
+    #                     fs.first_seen_date AS event_date,
+    #                     fs.rollup_type,
+    #                     fs.action,
+    #                     fs.geo,
+    #                     fs.product_id,
+    #                     fs.platform,
+    #                     COUNT(*) AS daily_new_devices
+    #                   FROM first_seen fs
+    #                   GROUP BY fs.first_seen_date, fs.rollup_type, fs.action, fs.geo, fs.product_id, fs.platform
+
+    #               - name: cumulative_activity
+    #                 sql: >
+    #                   SELECT
+    #                     d.event_date,
+    #                     d.rollup_type,
+    #                     d.action,
+    #                     d.geo,
+    #                     d.product_id,
+    #                     d.platform,
+    #                     d.pageview_count,
+    #                     d.daily_activity_count,
+    #                     SUM(COALESCE(n.daily_new_devices, 0)) OVER (
+    #                       PARTITION BY d.rollup_type, d.action, d.geo, d.product_id, d.platform
+    #                       ORDER BY d.event_date
+    #                       ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    #                     ) AS cumulative_activity_count
+    #                   FROM daily_activity d
+    #                   LEFT JOIN daily_new n
+    #                     ON d.event_date = n.event_date
+    #                     AND d.rollup_type = n.rollup_type
+    #                     AND d.action = n.action
+    #                     AND d.geo = n.geo
+    #                     AND d.platform = n.platform
+    #                     AND d.product_id = n.product_id
+
+    #               - name: with_region
+    #                 sql: >
+    #                     SELECT
+    #                       a.event_date,
+    #                       a.rollup_type,
+    #                       a.action,
+    #                       a.geo,
+    #                       a.product_id,
+    #                       a.platform,
+    #                       g.region,
+    #                       g.country_name,
+    #                       a.daily_activity_count,
+    #                       a.cumulative_activity_count,
+    #                       a.pageview_count
+    #                     FROM cumulative_activity a
+    #                     LEFT JOIN geo_mapping g ON g.country_code = a.geo
+
+    #               - name: final
+    #                 sql: >
+    #                   SELECT
+    #                     rollup_type,
+    #                     event_date,
+    #                     action,
+    #                     product_id,
+    #                     CASE
+    #                       WHEN region = 'LA' THEN 'LA (Latin America)'
+    #                       WHEN region = 'AP' THEN 'AP (Asia Pacific)'
+    #                       WHEN region = 'EMEA' THEN 'EMEA (Europe Middle East Africa)'
+    #                       ELSE region
+    #                     END AS region,
+    #                     country_name,
+    #                     platform,
+    #                     sum(pageview_count) as pageview_count,
+    #                     sum(daily_activity_count) as daily_activity_count,
+    #                     sum(cumulative_activity_count) as cumulative_activity_count
+    #                   FROM with_region
+    #                   group by 
+    #                     1,2,3,4,5,6,7
+
+    #         outputs:
+
+    #           - name: final
+    #             dataset: dataos://uesdkpostgresdepot:uesdk/rollup_geo_table?acl=rw
+    #             driver: org.postgresql.Driver
+    #             format: jdbc
+    #             options:
+    #               saveMode: append
+    #             description: Data set from Icebase
+    #             tags:
+    #               - Connect
+    #             title: Postgres Dataset
+
+
+    #       sparkConf:
+
+    #           # Shuffle Optimization
+    #           - spark.sql.shuffle.partitions: 600
+    #           - spark.default.parallelism: 600
+    #           - spark.sql.files.maxPartitionBytes: 256MB
+              
+    #           # Adaptive Execution
+    #           - spark.sql.adaptive.enabled: true
+    #           - spark.sql.adaptive.coalescePartitions.enabled: true
+    #           - spark.sql.adaptive.skewJoin.enabled: true
+    #           - spark.sql.adaptive.localShuffleReader.enabled: true
+    #           - spark.sql.adaptive.autoBroadcastJoinThreshold: 500m
+              
+    #           # Dynamic Allocation
+    #           - spark.dynamicAllocation.enabled: true
+    #           - spark.dynamicAllocation.executorIdleTimeout: 60s
+    #           - spark.dynamicAllocation.minExecutors: 4
+    #           - spark.dynamicAllocation.maxExecutors: 60
+    #           - spark.dynamicAllocation.shuffleTracking.enabled: true
+
+    #   dependencies:
+    #     - geo-table-07
+
+
+    # - name: geo-table-90
+    #   description: geo-table
+    #   spec:
+    #     tags:
+    #       - Lenovo
+    #     stack: flare:7.0
+    #     compute: ${RUNNABLE_COMPUTE}
+    #     stackSpec:
+    #       driver:
+    #         cores: ${ROLLUP_WF_DRIVER_CORES}
+    #         memory: ${ROLLUP_WF_DRIVER_MEMORY}
+    #       executor:
+    #         cores: ${ROLLUP_WF_EXECUTOR_CORES}
+    #         instances: 4
+    #         memory: ${ROLLUP_WF_EXECUTOR_MEMORY}
+    #       job:
+    #         explain: true
+    #         logLevel: INFO
+    #         inputs:
+    #           - name: geo_mapping
+    #             dataset: dataos://userengagementoutputdepot:output/geo_mapping?acl=rw
+    #             format: Iceberg    
+
+    #           - name: flattened
+    #             dataset: dataos://userengagementoutputdepot:uesdk/flattened_main_base_table?acl=rw
+    #             format: Iceberg      
+
+    #         steps:
+    #           - sequence:
+    #               - name: deduped
+    #                 sql: >    
+    #                     SELECT 
+    #                         rollup_type,
+    #                         event_date,
+    #                         action,
+    #                         geo,
+    #                         product_id,
+    #                         anonymous_device_idv1,
+    #                         platform,
+    #                         count(name) as pageview_count
+    #                     FROM flattened
+    #                     WHERE rollup_type in ('last_90_days')
+    #                     GROUP BY
+    #                        1,2,3,4,5,6,7
+
+    #               - name: first_seen
+    #                 sql: >
+    #                   SELECT
+    #                     rollup_type,
+    #                     action,
+    #                     geo,
+    #                     product_id,
+    #                     anonymous_device_idv1,
+    #                     platform,
+    #                     MIN(event_date) AS first_seen_date
+    #                   FROM deduped
+    #                   GROUP BY rollup_type, action, geo, product_id, platform, anonymous_device_idv1
+
+    #               - name: daily_activity
+    #                 sql: >
+    #                     SELECT
+    #                       event_date,
+    #                       rollup_type,
+    #                       action,
+    #                       geo,
+    #                       product_id,
+    #                       platform,
+    #                       sum(pageview_count) as pageview_count,
+    #                       COUNT(DISTINCT anonymous_device_idv1) AS daily_activity_count
+    #                     FROM deduped
+    #                     GROUP BY event_date, rollup_type, action, geo, product_id, platform
+
+    #               - name: daily_new
+    #                 sql: >
+    #                   SELECT
+    #                     fs.first_seen_date AS event_date,
+    #                     fs.rollup_type,
+    #                     fs.action,
+    #                     fs.geo,
+    #                     fs.product_id,
+    #                     fs.platform,
+    #                     COUNT(*) AS daily_new_devices
+    #                   FROM first_seen fs
+    #                   GROUP BY fs.first_seen_date, fs.rollup_type, fs.action, fs.geo, fs.product_id, fs.platform
+
+    #               - name: cumulative_activity
+    #                 sql: >
+    #                   SELECT
+    #                     d.event_date,
+    #                     d.rollup_type,
+    #                     d.action,
+    #                     d.geo,
+    #                     d.product_id,
+    #                     d.platform,
+    #                     d.pageview_count,
+    #                     d.daily_activity_count,
+    #                     SUM(COALESCE(n.daily_new_devices, 0)) OVER (
+    #                       PARTITION BY d.rollup_type, d.action, d.geo, d.product_id, d.platform
+    #                       ORDER BY d.event_date
+    #                       ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    #                     ) AS cumulative_activity_count
+    #                   FROM daily_activity d
+    #                   LEFT JOIN daily_new n
+    #                     ON d.event_date = n.event_date
+    #                     AND d.rollup_type = n.rollup_type
+    #                     AND d.action = n.action
+    #                     AND d.geo = n.geo
+    #                     AND d.platform = n.platform
+    #                     AND d.product_id = n.product_id
+
+    #               - name: with_region
+    #                 sql: >
+    #                     SELECT
+    #                       a.event_date,
+    #                       a.rollup_type,
+    #                       a.action,
+    #                       a.geo,
+    #                       a.product_id,
+    #                       a.platform,
+    #                       g.region,
+    #                       g.country_name,
+    #                       a.daily_activity_count,
+    #                       a.cumulative_activity_count,
+    #                       a.pageview_count
+    #                     FROM cumulative_activity a
+    #                     LEFT JOIN geo_mapping g ON g.country_code = a.geo
+
+    #               - name: final
+    #                 sql: >
+    #                   SELECT
+    #                     rollup_type,
+    #                     event_date,
+    #                     action,
+    #                     product_id,
+    #                     CASE
+    #                       WHEN region = 'LA' THEN 'LA (Latin America)'
+    #                       WHEN region = 'AP' THEN 'AP (Asia Pacific)'
+    #                       WHEN region = 'EMEA' THEN 'EMEA (Europe Middle East Africa)'
+    #                       ELSE region
+    #                     END AS region,
+    #                     country_name,
+    #                     platform,
+    #                     sum(pageview_count) as pageview_count,
+    #                     sum(daily_activity_count) as daily_activity_count,
+    #                     sum(cumulative_activity_count) as cumulative_activity_count
+    #                   FROM with_region
+    #                   group by 
+    #                     1,2,3,4,5,6,7
+
+    #         outputs:
+
+    #           - name: final
+    #             dataset: dataos://uesdkpostgresdepot:uesdk/rollup_geo_table?acl=rw
+    #             driver: org.postgresql.Driver
+    #             format: jdbc
+    #             options:
+    #               saveMode: append
+    #             description: Data set from Icebase
+    #             tags:
+    #               - Connect
+    #             title: Postgres Dataset
+
+
+    #       sparkConf:
+
+    #           # Shuffle Optimization
+    #           - spark.sql.shuffle.partitions: 600
+    #           - spark.default.parallelism: 600
+    #           - spark.sql.files.maxPartitionBytes: 256MB
+              
+    #           # Adaptive Execution
+    #           - spark.sql.adaptive.enabled: true
+    #           - spark.sql.adaptive.coalescePartitions.enabled: true
+    #           - spark.sql.adaptive.skewJoin.enabled: true
+    #           - spark.sql.adaptive.localShuffleReader.enabled: true
+    #           - spark.sql.adaptive.autoBroadcastJoinThreshold: 500m
+              
+    #           # Dynamic Allocation
+    #           - spark.dynamicAllocation.enabled: true
+    #           - spark.dynamicAllocation.executorIdleTimeout: 60s
+    #           - spark.dynamicAllocation.minExecutors: 4
+    #           - spark.dynamicAllocation.maxExecutors: 60
+    #           - spark.dynamicAllocation.shuffleTracking.enabled: true
+
+    #   dependencies:
+    #     - geo-table-30
+
+
+    # - name: geo-table-180
+    #   description: geo-table
+    #   spec:
+    #     tags:
+    #       - Lenovo
+    #     stack: flare:7.0
+    #     compute: ${RUNNABLE_COMPUTE}
+    #     stackSpec:
+    #       driver:
+    #         cores: ${ROLLUP_WF_DRIVER_CORES}
+    #         memory: ${ROLLUP_WF_DRIVER_MEMORY}
+    #       executor:
+    #         cores: ${ROLLUP_WF_EXECUTOR_CORES}
+    #         instances: 4
+    #         memory: ${ROLLUP_WF_EXECUTOR_MEMORY}
+    #       job:
+    #         explain: true
+    #         logLevel: INFO
+    #         inputs:
+    #           - name: geo_mapping
+    #             dataset: dataos://userengagementoutputdepot:output/geo_mapping?acl=rw
+    #             format: Iceberg    
+
+    #           - name: flattened
+    #             dataset: dataos://userengagementoutputdepot:uesdk/flattened_main_base_table?acl=rw
+    #             format: Iceberg      
+
+    #         steps:
+    #           - sequence:
+    #               - name: deduped
+    #                 sql: >    
+    #                     SELECT 
+    #                         rollup_type,
+    #                         event_date,
+    #                         action,
+    #                         geo,
+    #                         product_id,
+    #                         anonymous_device_idv1,
+    #                         platform,
+    #                         count(name) as pageview_count
+    #                     FROM flattened
+    #                     WHERE rollup_type in ('last_180_days')
+    #                     GROUP BY
+    #                        1,2,3,4,5,6,7
+
+    #               - name: first_seen
+    #                 sql: >
+    #                   SELECT
+    #                     rollup_type,
+    #                     action,
+    #                     geo,
+    #                     product_id,
+    #                     anonymous_device_idv1,
+    #                     platform,
+    #                     MIN(event_date) AS first_seen_date
+    #                   FROM deduped
+    #                   GROUP BY rollup_type, action, geo, product_id, platform, anonymous_device_idv1
+
+    #               - name: daily_activity
+    #                 sql: >
+    #                     SELECT
+    #                       event_date,
+    #                       rollup_type,
+    #                       action,
+    #                       geo,
+    #                       product_id,
+    #                       platform,
+    #                       sum(pageview_count) as pageview_count,
+    #                       COUNT(DISTINCT anonymous_device_idv1) AS daily_activity_count
+    #                     FROM deduped
+    #                     GROUP BY event_date, rollup_type, action, geo, product_id, platform
+
+    #               - name: daily_new
+    #                 sql: >
+    #                   SELECT
+    #                     fs.first_seen_date AS event_date,
+    #                     fs.rollup_type,
+    #                     fs.action,
+    #                     fs.geo,
+    #                     fs.product_id,
+    #                     fs.platform,
+    #                     COUNT(*) AS daily_new_devices
+    #                   FROM first_seen fs
+    #                   GROUP BY fs.first_seen_date, fs.rollup_type, fs.action, fs.geo, fs.product_id, fs.platform
+
+    #               - name: cumulative_activity
+    #                 sql: >
+    #                   SELECT
+    #                     d.event_date,
+    #                     d.rollup_type,
+    #                     d.action,
+    #                     d.geo,
+    #                     d.product_id,
+    #                     d.platform,
+    #                     d.pageview_count,
+    #                     d.daily_activity_count,
+    #                     SUM(COALESCE(n.daily_new_devices, 0)) OVER (
+    #                       PARTITION BY d.rollup_type, d.action, d.geo, d.product_id, d.platform
+    #                       ORDER BY d.event_date
+    #                       ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    #                     ) AS cumulative_activity_count
+    #                   FROM daily_activity d
+    #                   LEFT JOIN daily_new n
+    #                     ON d.event_date = n.event_date
+    #                     AND d.rollup_type = n.rollup_type
+    #                     AND d.action = n.action
+    #                     AND d.geo = n.geo
+    #                     AND d.platform = n.platform
+    #                     AND d.product_id = n.product_id
+
+    #               - name: with_region
+    #                 sql: >
+    #                     SELECT
+    #                       a.event_date,
+    #                       a.rollup_type,
+    #                       a.action,
+    #                       a.geo,
+    #                       a.product_id,
+    #                       a.platform,
+    #                       g.region,
+    #                       g.country_name,
+    #                       a.daily_activity_count,
+    #                       a.cumulative_activity_count,
+    #                       a.pageview_count
+    #                     FROM cumulative_activity a
+    #                     LEFT JOIN geo_mapping g ON g.country_code = a.geo
+
+    #               - name: final
+    #                 sql: >
+    #                   SELECT
+    #                     rollup_type,
+    #                     event_date,
+    #                     action,
+    #                     product_id,
+    #                     CASE
+    #                       WHEN region = 'LA' THEN 'LA (Latin America)'
+    #                       WHEN region = 'AP' THEN 'AP (Asia Pacific)'
+    #                       WHEN region = 'EMEA' THEN 'EMEA (Europe Middle East Africa)'
+    #                       ELSE region
+    #                     END AS region,
+    #                     country_name,
+    #                     platform,
+    #                     sum(pageview_count) as pageview_count,
+    #                     sum(daily_activity_count) as daily_activity_count,
+    #                     sum(cumulative_activity_count) as cumulative_activity_count
+    #                   FROM with_region
+    #                   group by 
+    #                     1,2,3,4,5,6,7
+
+    #         outputs:
+
+    #           - name: final
+    #             dataset: dataos://uesdkpostgresdepot:uesdk/rollup_geo_table?acl=rw
+    #             driver: org.postgresql.Driver
+    #             format: jdbc
+    #             options:
+    #               saveMode: append
+    #             description: Data set from Icebase
+    #             tags:
+    #               - Connect
+    #             title: Postgres Dataset
+
+
+    #       sparkConf:
+
+    #           # Shuffle Optimization
+    #           - spark.sql.shuffle.partitions: 600
+    #           - spark.default.parallelism: 600
+    #           - spark.sql.files.maxPartitionBytes: 256MB
+              
+    #           # Adaptive Execution
+    #           - spark.sql.adaptive.enabled: true
+    #           - spark.sql.adaptive.coalescePartitions.enabled: true
+    #           - spark.sql.adaptive.skewJoin.enabled: true
+    #           - spark.sql.adaptive.localShuffleReader.enabled: true
+    #           - spark.sql.adaptive.autoBroadcastJoinThreshold: 500m
+              
+    #           # Dynamic Allocation
+    #           - spark.dynamicAllocation.enabled: true
+    #           - spark.dynamicAllocation.executorIdleTimeout: 60s
+    #           - spark.dynamicAllocation.minExecutors: 4
+    #           - spark.dynamicAllocation.maxExecutors: 60
+    #           - spark.dynamicAllocation.shuffleTracking.enabled: true
+
+    #   dependencies:
+    #     - geo-table-90
+
+
+    # - name: geo-table-365
+    #   description: geo-table
+    #   spec:
+    #     tags:
+    #       - Lenovo
+    #     stack: flare:7.0
+    #     compute: ${RUNNABLE_COMPUTE}
+    #     stackSpec:
+    #       driver:
+    #         cores: ${ROLLUP_WF_DRIVER_CORES}
+    #         memory: ${ROLLUP_WF_DRIVER_MEMORY}
+    #       executor:
+    #         cores: ${ROLLUP_WF_EXECUTOR_CORES}
+    #         instances: 4
+    #         memory: ${ROLLUP_WF_EXECUTOR_MEMORY}
+    #       job:
+    #         explain: true
+    #         logLevel: INFO
+    #         inputs:
+    #           - name: geo_mapping
+    #             dataset: dataos://userengagementoutputdepot:output/geo_mapping?acl=rw
+    #             format: Iceberg    
+
+    #           - name: flattened
+    #             dataset: dataos://userengagementoutputdepot:uesdk/flattened_main_base_table?acl=rw
+    #             format: Iceberg      
+
+    #         steps:
+    #           - sequence:
+    #               - name: deduped
+    #                 sql: >    
+    #                     SELECT 
+    #                         rollup_type,
+    #                         event_date,
+    #                         action,
+    #                         geo,
+    #                         product_id,
+    #                         anonymous_device_idv1,
+    #                         platform,
+    #                         count(name) as pageview_count
+    #                     FROM flattened
+    #                     WHERE rollup_type in ('last_365_days')
+    #                     GROUP BY
+    #                        1,2,3,4,5,6,7
+
+    #               - name: first_seen
+    #                 sql: >
+    #                   SELECT
+    #                     rollup_type,
+    #                     action,
+    #                     geo,
+    #                     product_id,
+    #                     anonymous_device_idv1,
+    #                     platform,
+    #                     MIN(event_date) AS first_seen_date
+    #                   FROM deduped
+    #                   GROUP BY rollup_type, action, geo, product_id, platform, anonymous_device_idv1
+
+    #               - name: daily_activity
+    #                 sql: >
+    #                     SELECT
+    #                       event_date,
+    #                       rollup_type,
+    #                       action,
+    #                       geo,
+    #                       product_id,
+    #                       platform,
+    #                       sum(pageview_count) as pageview_count,
+    #                       COUNT(DISTINCT anonymous_device_idv1) AS daily_activity_count
+    #                     FROM deduped
+    #                     GROUP BY event_date, rollup_type, action, geo, product_id, platform
+
+    #               - name: daily_new
+    #                 sql: >
+    #                   SELECT
+    #                     fs.first_seen_date AS event_date,
+    #                     fs.rollup_type,
+    #                     fs.action,
+    #                     fs.geo,
+    #                     fs.product_id,
+    #                     fs.platform,
+    #                     COUNT(*) AS daily_new_devices
+    #                   FROM first_seen fs
+    #                   GROUP BY fs.first_seen_date, fs.rollup_type, fs.action, fs.geo, fs.product_id, fs.platform
+
+    #               - name: cumulative_activity
+    #                 sql: >
+    #                   SELECT
+    #                     d.event_date,
+    #                     d.rollup_type,
+    #                     d.action,
+    #                     d.geo,
+    #                     d.product_id,
+    #                     d.platform,
+    #                     d.pageview_count,
+    #                     d.daily_activity_count,
+    #                     SUM(COALESCE(n.daily_new_devices, 0)) OVER (
+    #                       PARTITION BY d.rollup_type, d.action, d.geo, d.product_id, d.platform
+    #                       ORDER BY d.event_date
+    #                       ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    #                     ) AS cumulative_activity_count
+    #                   FROM daily_activity d
+    #                   LEFT JOIN daily_new n
+    #                     ON d.event_date = n.event_date
+    #                     AND d.rollup_type = n.rollup_type
+    #                     AND d.action = n.action
+    #                     AND d.geo = n.geo
+    #                     AND d.platform = n.platform
+    #                     AND d.product_id = n.product_id
+
+    #               - name: with_region
+    #                 sql: >
+    #                     SELECT
+    #                       a.event_date,
+    #                       a.rollup_type,
+    #                       a.action,
+    #                       a.geo,
+    #                       a.product_id,
+    #                       a.platform,
+    #                       g.region,
+    #                       g.country_name,
+    #                       a.daily_activity_count,
+    #                       a.cumulative_activity_count,
+    #                       a.pageview_count
+    #                     FROM cumulative_activity a
+    #                     LEFT JOIN geo_mapping g ON g.country_code = a.geo
+
+    #               - name: final
+    #                 sql: >
+    #                   SELECT
+    #                     rollup_type,
+    #                     event_date,
+    #                     action,
+    #                     product_id,
+    #                     CASE
+    #                       WHEN region = 'LA' THEN 'LA (Latin America)'
+    #                       WHEN region = 'AP' THEN 'AP (Asia Pacific)'
+    #                       WHEN region = 'EMEA' THEN 'EMEA (Europe Middle East Africa)'
+    #                       ELSE region
+    #                     END AS region,
+    #                     country_name,
+    #                     platform,
+    #                     sum(pageview_count) as pageview_count,
+    #                     sum(daily_activity_count) as daily_activity_count,
+    #                     sum(cumulative_activity_count) as cumulative_activity_count
+    #                   FROM with_region
+    #                   group by 
+    #                     1,2,3,4,5,6,7
+
+    #         outputs:
+
+    #           - name: final
+    #             dataset: dataos://uesdkpostgresdepot:uesdk/rollup_geo_table?acl=rw
+    #             driver: org.postgresql.Driver
+    #             format: jdbc
+    #             options:
+    #               saveMode: append
+    #             description: Data set from Icebase
+    #             tags:
+    #               - Connect
+    #             title: Postgres Dataset
+
+
+    #       sparkConf:
+
+    #           # Shuffle Optimization
+    #           - spark.sql.shuffle.partitions: 600
+    #           - spark.default.parallelism: 600
+    #           - spark.sql.files.maxPartitionBytes: 256MB
+              
+    #           # Adaptive Execution
+    #           - spark.sql.adaptive.enabled: true
+    #           - spark.sql.adaptive.coalescePartitions.enabled: true
+    #           - spark.sql.adaptive.skewJoin.enabled: true
+    #           - spark.sql.adaptive.localShuffleReader.enabled: true
+    #           - spark.sql.adaptive.autoBroadcastJoinThreshold: 500m
+              
+    #           # Dynamic Allocation
+    #           - spark.dynamicAllocation.enabled: true
+    #           - spark.dynamicAllocation.executorIdleTimeout: 60s
+    #           - spark.dynamicAllocation.minExecutors: 4
+    #           - spark.dynamicAllocation.maxExecutors: 60
+    #           - spark.dynamicAllocation.shuffleTracking.enabled: true
+
+    #   dependencies:
+    #     - geo-table-180

@@ -1,0 +1,25 @@
+name: depottestas
+version: v2alpha
+type: depot
+description: To read data from postgresql database
+# tags:
+#   - ${{tag1}}
+#   - ${{tag2}}
+owner: arkadeepsen
+layer: user
+depot:
+  type: JDBC                  
+  external: true
+  secrets:
+    - name: postgres-as-r
+      allkeys: true
+    - name: postgres-as-rw
+      allkeys: true
+    
+  jdbc:                        
+    subprotocol: postgresql
+    host: sys-db-dataos-ck-rjhk-dataos-stg.postgres.database.azure.com
+    port: 5432
+    database: modern-postgres
+    # params: #Required 
+    #   sslmode: ${{disable}}
