@@ -4,8 +4,8 @@ name: wf-customer-data-asen
 type: workflow
 workflow:
   schedule:
-      cron: '00 20 * * *'
-      endOn: '2023-12-12T22:00:00Z'
+      cron: '55 11 * * *'
+      endOn: '2027-12-12T22:00:00Z'
       concurrencyPolicy: Forbid
       timezone: Asia/Kolkata
   dag:
@@ -16,7 +16,7 @@ workflow:
         stackSpec:
           inputs:
             - name: customer_data
-              dataset: dataos://depottestas:public/product_data?acl=r
+              dataset: dataos://postgres:public/product_data?acl=r
               format: jdbc
               options:
                 driver: org.postgresql.Driver
@@ -29,7 +29,7 @@ workflow:
                     FROM customer_data
           outputs:
             - name: final
-              dataset: dataos://depottestas:public/customer_data_asen?acl=rw
+              dataset: dataos://postgres:public/customer_data_asen21?acl=rw
               driver: org.postgresql.Driver
               format: jdbc
               title: Purchase Dataset

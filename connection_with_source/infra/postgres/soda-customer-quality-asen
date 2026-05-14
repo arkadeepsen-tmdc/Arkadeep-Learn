@@ -1,0 +1,37 @@
+# Important: Replace 'abc' with your initials to personalize and distinguish the resource you’ve created.
+name: soda-customer-quality-asen
+version: v1
+type: workflow
+tags:
+  - workflow
+  - soda-checks
+description: Applying quality checks for the customer data
+workspace: workspaceasen      # Provide your workspace name
+workflow:
+  dag:
+    - name: soda-customer-quality
+      spec:
+        stack: soda+python:1.0
+        compute: runnable-default
+        resources:
+          requests:
+            cpu: 1000m
+            memory: 250Mi
+          limits:
+            cpu: 1000m
+            memory: 250Mi
+        logLevel: INFO
+        stackSpec:
+          inputs:
+            - dataset: dataos://postgres:public/customer_data_asen21
+              options:
+                engine: minerva
+                clusterName: miniature
+              profile:
+                columns:
+                  - include *
+              checks:
+                - invalid_count(customer_id) = 1:
+                    name: Customer ID should not be zero
+                    attributes:
+                      category: Validity
