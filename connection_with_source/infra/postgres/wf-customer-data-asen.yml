@@ -24,7 +24,7 @@ workflow:
                     FROM customer_data
           outputs:
             - name: final
-              dataset: dataos://depottestas:public/customer_data_asen?acl=rw
+              dataset: dataos://depottestas:public/customer_data_asen22?acl=rw
               driver: org.postgresql.Driver
               format: jdbc
               title: Purchase Dataset

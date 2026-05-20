@@ -1,0 +1,1476 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Customer Data Ops</title>
+  <style>
+    :root {
+      --bg: #f3f7f3;
+      --ink: #17211f;
+      --muted: #65706c;
+      --line: #cbd8d2;
+      --panel: #ffffff;
+      --panel-2: #f8fbf8;
+      --teal: #167d72;
+      --teal-dark: #0d5d55;
+      --sun: #f2b33d;
+      --coral: #e6674a;
+      --berry: #8d3f62;
+      --green: #4f8b3a;
+      --shadow: 0 24px 70px rgba(22, 45, 38, 0.13);
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-width: 320px;
+      margin: 0;
+      background:
+        linear-gradient(120deg, rgba(22, 125, 114, 0.08), transparent 34%),
+        linear-gradient(240deg, rgba(230, 103, 74, 0.08), transparent 36%),
+        var(--bg);
+      color: var(--ink);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 24px 18px;
+      border-right: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(20px);
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border: 1px solid #143d38;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: #173f39;
+      color: #ecfbf2;
+      box-shadow: 5px 5px 0 rgba(22, 125, 114, 0.18);
+      flex: 0 0 auto;
+    }
+
+    .brand-text {
+      min-width: 0;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1.04rem;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .nav {
+      display: grid;
+      gap: 7px;
+    }
+
+    .nav button,
+    .icon-btn {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .nav button {
+      width: 100%;
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: #34413d;
+      background: transparent;
+      text-align: left;
+    }
+
+    .nav button:hover,
+    .nav button.active {
+      background: #e7f0eb;
+      color: var(--ink);
+    }
+
+    .nav svg,
+    .icon-btn svg,
+    .tool-btn svg,
+    .mode-toggle svg {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+    }
+
+    .sidebar-card {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #eef5f0;
+      margin-top: auto;
+    }
+
+    .sidebar-card .label {
+      margin: 0;
+      font-size: 0.73rem;
+      text-transform: uppercase;
+      letter-spacing: 0;
+      color: #60716b;
+    }
+
+    .sidebar-card .value {
+      margin: 8px 0 0;
+      font-size: 1.32rem;
+      font-weight: 760;
+    }
+
+    .sidebar-card .hint {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.4;
+    }
+
+    .main {
+      min-width: 0;
+      padding: 28px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .title-block {
+      min-width: 0;
+    }
+
+    .eyebrow {
+      margin: 0 0 7px;
+      color: var(--teal-dark);
+      font-size: 0.74rem;
+      font-weight: 760;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .title-block h2 {
+      margin: 0;
+      font-size: 2.7rem;
+      line-height: 1.02;
+      letter-spacing: 0;
+      max-width: 12ch;
+    }
+
+    .title-block p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      max-width: 66ch;
+      line-height: 1.55;
+      font-size: 0.96rem;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .icon-btn,
+    .tool-btn,
+    .primary-btn,
+    .mode-toggle {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--ink);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 9px 12px;
+      box-shadow: 0 10px 28px rgba(59, 42, 22, 0.08);
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    .icon-btn {
+      width: 42px;
+      padding: 0;
+      position: relative;
+    }
+
+    .icon-btn:hover,
+    .tool-btn:hover,
+    .primary-btn:hover,
+    .mode-toggle:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 34px rgba(59, 42, 22, 0.13);
+      background: #f8fbf8;
+    }
+
+    .icon-btn::after,
+    .tool-btn::after {
+      content: attr(aria-label);
+      position: absolute;
+      z-index: 6;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: 190px;
+      padding: 7px 9px;
+      border-radius: 6px;
+      background: #16211f;
+      color: #ffffff;
+      font-size: 0.74rem;
+      line-height: 1.2;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 140ms ease;
+    }
+
+    .icon-btn:hover::after,
+    .tool-btn:hover::after {
+      opacity: 1;
+    }
+
+    .primary-btn {
+      border-color: #11554e;
+      background: #173f39;
+      color: #f7fff9;
+      font-weight: 730;
+    }
+
+    .primary-btn:hover {
+      background: #0f342f;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.28fr) minmax(320px, 0.72fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      min-height: 62px;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .panel-header h3 {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .panel-header p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.35;
+    }
+
+    .segmented {
+      display: inline-grid;
+      grid-template-columns: repeat(3, 1fr);
+      padding: 3px;
+      gap: 3px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #e7f0eb;
+      min-width: 190px;
+    }
+
+    .segmented button {
+      min-height: 32px;
+      border: 0;
+      border-radius: 6px;
+      padding: 5px 10px;
+      background: transparent;
+      color: #5f675f;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .segmented button.active {
+      background: #ffffff;
+      color: var(--ink);
+      box-shadow: 0 3px 10px rgba(60, 44, 26, 0.12);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      padding: 16px;
+    }
+
+    .metric {
+      min-height: 132px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-2);
+      padding: 14px;
+      display: grid;
+      align-content: space-between;
+      gap: 14px;
+      overflow: hidden;
+    }
+
+    .metric-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: flex-start;
+      min-width: 0;
+    }
+
+    .metric-label {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.3;
+    }
+
+    .metric-value {
+      margin: 6px 0 0;
+      font-size: 2rem;
+      line-height: 1;
+      letter-spacing: 0;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 24px;
+      padding: 4px 7px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 730;
+      white-space: nowrap;
+    }
+
+    .badge.ok {
+      background: rgba(79, 139, 58, 0.13);
+      color: #3f702e;
+    }
+
+    .badge.warn {
+      background: rgba(242, 179, 61, 0.2);
+      color: #826019;
+    }
+
+    .badge.hot {
+      background: rgba(230, 103, 74, 0.16);
+      color: #9d412e;
+    }
+
+    .spark {
+      width: 100%;
+      height: 34px;
+      display: block;
+    }
+
+    .spark path {
+      fill: none;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .pipeline-wrap {
+      padding: 0 16px 16px;
+    }
+
+    .pipeline {
+      position: relative;
+      min-height: 400px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        linear-gradient(rgba(23, 33, 31, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(23, 33, 31, 0.035) 1px, transparent 1px),
+        #ffffff;
+      background-size: 28px 28px;
+      overflow: hidden;
+    }
+
+    .pipeline-map {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .pipe-line {
+      fill: none;
+      stroke: #95a59d;
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-dasharray: 10 12;
+      animation: route 1.7s linear infinite;
+    }
+
+    .pipe-line.hotline {
+      stroke: var(--teal);
+      stroke-width: 5;
+    }
+
+    @keyframes route {
+      to {
+        stroke-dashoffset: -44;
+      }
+    }
+
+    .node {
+      position: absolute;
+      width: min(30vw, 205px);
+      min-width: 146px;
+      min-height: 106px;
+      border: 1px solid #c8d5cf;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 18px 42px rgba(22, 45, 38, 0.12);
+      padding: 13px;
+      display: grid;
+      gap: 9px;
+    }
+
+    .node.source {
+      left: 6%;
+      top: 14%;
+    }
+
+    .node.compute {
+      left: 38%;
+      top: 9%;
+    }
+
+    .node.output {
+      right: 6%;
+      top: 14%;
+    }
+
+    .node.audit {
+      left: 28%;
+      bottom: 9%;
+    }
+
+    .node.quality {
+      right: 17%;
+      bottom: 9%;
+    }
+
+    .node-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .node-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: #173f39;
+      color: #ffffff;
+      flex: 0 0 auto;
+    }
+
+    .node.compute .node-icon {
+      background: var(--berry);
+    }
+
+    .node.output .node-icon {
+      background: var(--coral);
+    }
+
+    .node.audit .node-icon {
+      background: #6f5f48;
+    }
+
+    .node.quality .node-icon {
+      background: var(--green);
+    }
+
+    .node h4 {
+      margin: 0;
+      font-size: 0.92rem;
+      letter-spacing: 0;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    .node p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.76rem;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    .progress {
+      height: 7px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #e7f0eb;
+    }
+
+    .progress span {
+      display: block;
+      height: 100%;
+      width: var(--value, 64%);
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--teal), var(--sun));
+    }
+
+    .side-stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .run-card {
+      padding: 18px;
+      background: #173f39;
+      color: #f7fff9;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .run-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(135deg, transparent 0 50%, rgba(242, 179, 61, 0.24) 50% 52%, transparent 52%),
+        repeating-linear-gradient(90deg, transparent 0 24px, rgba(255, 255, 255, 0.04) 24px 25px);
+      pointer-events: none;
+    }
+
+    .run-card > * {
+      position: relative;
+    }
+
+    .run-card .eyebrow {
+      color: #ffc85c;
+    }
+
+    .run-card h3 {
+      margin: 0;
+      font-size: 1.55rem;
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    .run-card p {
+      color: rgba(247, 255, 249, 0.72);
+      line-height: 1.5;
+      font-size: 0.92rem;
+      margin: 10px 0 18px;
+    }
+
+    .run-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .run-stat {
+      min-height: 78px;
+      padding: 11px;
+      border: 1px solid rgba(247, 255, 249, 0.22);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .run-stat span {
+      display: block;
+      color: rgba(247, 255, 249, 0.68);
+      font-size: 0.75rem;
+      margin-bottom: 7px;
+    }
+
+    .run-stat strong {
+      font-size: 1.12rem;
+      line-height: 1.1;
+      overflow-wrap: anywhere;
+    }
+
+    .mode-toggle {
+      width: 100%;
+      border-color: rgba(247, 255, 249, 0.28);
+      background: rgba(247, 255, 249, 0.1);
+      color: #f7fff9;
+      box-shadow: none;
+      font-weight: 730;
+    }
+
+    .mode-toggle:hover {
+      background: rgba(247, 255, 249, 0.17);
+    }
+
+    .table-panel {
+      padding: 0;
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+      max-width: 100%;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 540px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 13px 16px;
+      border-bottom: 1px solid var(--line);
+      font-size: 0.84rem;
+      white-space: nowrap;
+    }
+
+    th {
+      color: #68776f;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0;
+      background: #eef5f0;
+    }
+
+    td {
+      color: #2e3936;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .quality-list {
+      display: grid;
+      gap: 10px;
+      padding: 16px;
+    }
+
+    .quality-item {
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      min-height: 58px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-2);
+    }
+
+    .quality-item .node-icon {
+      width: 36px;
+      height: 36px;
+    }
+
+    .quality-item h4 {
+      margin: 0;
+      font-size: 0.88rem;
+      line-height: 1.25;
+    }
+
+    .quality-item p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 0.76rem;
+      line-height: 1.3;
+    }
+
+    .code-panel {
+      grid-column: 1 / -1;
+    }
+
+    .code-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 310px;
+      gap: 0;
+    }
+
+    .code-window {
+      margin: 0;
+      min-height: 280px;
+      padding: 18px;
+      overflow-x: auto;
+      background: #17211f;
+      color: #f4fff7;
+      font: 0.88rem/1.7 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    .code-window .key {
+      color: #ffc857;
+    }
+
+    .code-window .name {
+      color: #88d4c9;
+    }
+
+    .code-window .text {
+      color: #f2a38e;
+    }
+
+    .code-window .comment {
+      color: #9eb0aa;
+    }
+
+    .inspector {
+      padding: 18px;
+      border-left: 1px solid var(--line);
+      background: #ffffff;
+      display: grid;
+      align-content: start;
+      gap: 13px;
+    }
+
+    .inspector h3 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .inspector-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 10px;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .inspector-row strong {
+      color: var(--ink);
+      text-align: right;
+      overflow-wrap: anywhere;
+    }
+
+    .tool-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tool-btn {
+      position: relative;
+      width: 42px;
+      padding: 0;
+      min-width: 42px;
+    }
+
+    .toast {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 9;
+      width: min(340px, calc(100vw - 32px));
+      padding: 13px 15px;
+      border: 1px solid #a8b8b0;
+      border-radius: 8px;
+      background: #17211f;
+      color: #ffffff;
+      box-shadow: 0 20px 50px rgba(26, 19, 11, 0.28);
+      transform: translateY(18px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease, transform 180ms ease;
+      font-size: 0.86rem;
+      line-height: 1.4;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 1120px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .side-stack {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .code-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .inspector {
+        border-left: 0;
+        border-top: 1px solid var(--line);
+      }
+    }
+
+    @media (max-width: 860px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        height: auto;
+        padding: 14px;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .nav {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .nav button {
+        justify-content: center;
+      }
+
+      .nav span {
+        display: none;
+      }
+
+      .sidebar-card {
+        display: none;
+      }
+
+      .main {
+        padding: 18px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .actions {
+        justify-content: flex-start;
+      }
+
+      .metrics,
+      .side-stack {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .pipeline {
+        min-height: 560px;
+      }
+
+      .pipeline-map {
+        display: none;
+      }
+
+      .node {
+        position: relative;
+        inset: auto;
+        width: calc(100% - 28px);
+        margin: 14px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .metrics,
+      .side-stack,
+      .run-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .panel-header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .segmented {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .quality-item {
+        grid-template-columns: 36px minmax(0, 1fr);
+      }
+
+      .quality-item .badge {
+        grid-column: 2;
+        justify-self: start;
+      }
+
+      .title-block h2 {
+        max-width: 100%;
+        font-size: 2.05rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Workspace">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M5 7c0-1.7 3.1-3 7-3s7 1.3 7 3-3.1 3-7 3-7-1.3-7-3Z" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M5 7v5c0 1.7 3.1 3 7 3s7-1.3 7-3V7" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M5 12v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5" stroke="currentColor" stroke-width="1.8"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>Customer Data Ops</h1>
+          <p>depottestas / public</p>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Primary">
+        <button class="active" type="button">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 13h6V4H4v9Zm10 7h6V4h-6v16ZM4 20h6v-4H4v4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+          </svg>
+          <span>Overview</span>
+        </button>
+        <button type="button">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M6 7h12M6 12h12M6 17h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M4 7h.01M4 12h.01M4 17h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+          <span>Runs</span>
+        </button>
+        <button type="button">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 17V7l8-4 8 4v10l-8 4-8-4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+            <path d="m4 7 8 4 8-4M12 11v10" stroke="currentColor" stroke-width="1.8"/>
+          </svg>
+          <span>Lineage</span>
+        </button>
+        <button type="button">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 3 4 6v6c0 5 3.4 7.7 8 9 4.6-1.3 8-4 8-9V6l-8-3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+            <path d="m8.5 12.2 2.2 2.2 4.8-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Quality</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-card">
+        <p class="label">Active workflow</p>
+        <p class="value">wf-customer-data-asen</p>
+        <p class="hint">Postgres JDBC source to curated customer dataset.</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="topbar" aria-labelledby="page-title">
+        <div class="title-block">
+          <p class="eyebrow">Production Cockpit</p>
+          <h2 id="page-title">Customer Data Pipeline</h2>
+          <p>Operational view for the workflow moving customer records from the source table into a curated Postgres dataset with freshness, lineage, and quality signals.</p>
+        </div>
+
+        <div class="actions" aria-label="Page actions">
+          <button class="icon-btn" type="button" aria-label="Refresh dashboard" data-toast="Dashboard refreshed at local time.">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M20 12a8 8 0 1 1-2.34-5.66" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+              <path d="M20 4v5h-5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="icon-btn" type="button" aria-label="Open alerts" data-toast="No blocking alerts. One schema drift watch is active.">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M18 9a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+              <path d="M10 21h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <button class="primary-btn" type="button" data-run>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M8 5v14l11-7L8 5Z" fill="currentColor"/>
+            </svg>
+            Run Now
+          </button>
+        </div>
+      </section>
+
+      <section class="dashboard-grid">
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>Pipeline telemetry</h3>
+              <p>Today across JDBC reads, compute, and dataset writes.</p>
+            </div>
+            <div class="segmented" role="tablist" aria-label="Time range">
+              <button class="active" type="button" data-range="today">Today</button>
+              <button type="button" data-range="week">7 days</button>
+              <button type="button" data-range="month">30 days</button>
+            </div>
+          </div>
+
+          <div class="metrics">
+            <div class="metric">
+              <div class="metric-top">
+                <div>
+                  <p class="metric-label">Rows processed</p>
+                  <p class="metric-value" data-metric="rows">1.28M</p>
+                </div>
+                <span class="badge ok">+8.4%</span>
+              </div>
+              <svg class="spark" viewBox="0 0 120 34" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M1 26 C12 18, 22 22, 31 13 S50 8, 60 15 76 27, 88 13 104 8, 119 5" stroke="#167d72"/>
+              </svg>
+            </div>
+
+            <div class="metric">
+              <div class="metric-top">
+                <div>
+                  <p class="metric-label">Freshness</p>
+                  <p class="metric-value" data-metric="freshness">4m</p>
+                </div>
+                <span class="badge ok">SLA</span>
+              </div>
+              <svg class="spark" viewBox="0 0 120 34" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M1 9 C12 15, 23 13, 35 18 S55 25, 68 17 86 9, 100 13 119 8" stroke="#4f8b3a"/>
+              </svg>
+            </div>
+
+            <div class="metric">
+              <div class="metric-top">
+                <div>
+                  <p class="metric-label">Quality score</p>
+                  <p class="metric-value" data-metric="quality">99.2%</p>
+                </div>
+                <span class="badge warn">Watch</span>
+              </div>
+              <svg class="spark" viewBox="0 0 120 34" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M1 19 C16 16, 23 8, 39 10 S65 12, 72 18 93 24, 119 12" stroke="#f2b33d"/>
+              </svg>
+            </div>
+
+            <div class="metric">
+              <div class="metric-top">
+                <div>
+                  <p class="metric-label">Cost per run</p>
+                  <p class="metric-value" data-metric="cost">$2.41</p>
+                </div>
+                <span class="badge hot">-3.1%</span>
+              </div>
+              <svg class="spark" viewBox="0 0 120 34" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M1 8 C13 12, 24 20, 36 14 S56 5, 68 12 87 25, 101 22 119 17" stroke="#e6674a"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="pipeline-wrap">
+            <div class="pipeline" aria-label="Workflow lineage diagram">
+              <svg class="pipeline-map" viewBox="0 0 900 420" preserveAspectRatio="none" aria-hidden="true">
+                <path class="pipe-line hotline" d="M160 110 C260 80, 330 85, 430 110 S640 140, 744 116"/>
+                <path class="pipe-line" d="M430 170 C400 240, 340 265, 310 322"/>
+                <path class="pipe-line" d="M548 176 C590 235, 620 260, 658 318"/>
+              </svg>
+
+              <div class="node source">
+                <div class="node-head">
+                  <div class="node-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M5 7c0-1.7 3.1-3 7-3s7 1.3 7 3-3.1 3-7 3-7-1.3-7-3Z" stroke="currentColor" stroke-width="1.8"/>
+                      <path d="M5 7v10c0 1.7 3.1 3 7 3s7-1.3 7-3V7" stroke="currentColor" stroke-width="1.8"/>
+                    </svg>
+                  </div>
+                  <span class="badge ok">Read</span>
+                </div>
+                <h4>customer_data</h4>
+                <p>dataos://depottestas:public/product_data</p>
+                <div class="progress"><span style="--value: 88%"></span></div>
+              </div>
+
+              <div class="node compute">
+                <div class="node-head">
+                  <div class="node-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M12 3v18M4 7h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                      <path d="M8 11h8v2H8z" fill="currentColor"/>
+                    </svg>
+                  </div>
+                  <span class="badge ok">Flare 7.0</span>
+                </div>
+                <h4>dg-customer-data</h4>
+                <p>SELECT * through runnable-default compute.</p>
+                <div class="progress"><span style="--value: 72%"></span></div>
+              </div>
+
+              <div class="node output">
+                <div class="node-head">
+                  <div class="node-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M4 17V7l8-4 8 4v10l-8 4-8-4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                      <path d="m4 7 8 4 8-4" stroke="currentColor" stroke-width="1.8"/>
+                    </svg>
+                  </div>
+                  <span class="badge ok">Write</span>
+                </div>
+                <h4>customer_data_asen</h4>
+                <p>Overwrite mode, ACL read/write.</p>
+                <div class="progress"><span style="--value: 94%"></span></div>
+              </div>
+
+              <div class="node audit">
+                <div class="node-head">
+                  <div class="node-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M6 3h9l3 3v15H6V3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                      <path d="M9 13h6M9 17h4M14 3v4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <span class="badge warn">Trace</span>
+                </div>
+                <h4>Run manifest</h4>
+                <p>Inputs, compute, output, and save mode captured.</p>
+                <div class="progress"><span style="--value: 64%"></span></div>
+              </div>
+
+              <div class="node quality">
+                <div class="node-head">
+                  <div class="node-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M12 3 4 6v6c0 5 3.4 7.7 8 9 4.6-1.3 8-4 8-9V6l-8-3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                      <path d="m8.5 12.2 2.2 2.2 4.8-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </div>
+                  <span class="badge ok">Pass</span>
+                </div>
+                <h4>Quality checks</h4>
+                <p>Null guard, row volume, schema drift, freshness.</p>
+                <div class="progress"><span style="--value: 81%"></span></div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <aside class="side-stack">
+          <section class="run-card">
+            <p class="eyebrow">Latest Run</p>
+            <h3>Complete in 02:18</h3>
+            <p>Workflow finished with the curated dataset ready for downstream consumption.</p>
+            <div class="run-grid">
+              <div class="run-stat">
+                <span>Compute</span>
+                <strong>runnable-default</strong>
+              </div>
+              <div class="run-stat">
+                <span>Save mode</span>
+                <strong>overwrite</strong>
+              </div>
+              <div class="run-stat">
+                <span>Driver</span>
+                <strong>PostgreSQL</strong>
+              </div>
+              <div class="run-stat">
+                <span>ACL</span>
+                <strong>rw</strong>
+              </div>
+            </div>
+            <button class="mode-toggle" type="button" data-promote>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Promote Dataset
+            </button>
+          </section>
+
+          <section class="panel table-panel">
+            <div class="panel-header">
+              <div>
+                <h3>Recent executions</h3>
+                <p>Last four workflow attempts.</p>
+              </div>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Run</th>
+                    <th>Status</th>
+                    <th>Rows</th>
+                    <th>Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>#1842</td>
+                    <td><span class="badge ok">Done</span></td>
+                    <td>1.28M</td>
+                    <td>02:18</td>
+                  </tr>
+                  <tr>
+                    <td>#1841</td>
+                    <td><span class="badge ok">Done</span></td>
+                    <td>1.19M</td>
+                    <td>02:21</td>
+                  </tr>
+                  <tr>
+                    <td>#1840</td>
+                    <td><span class="badge warn">Retry</span></td>
+                    <td>1.18M</td>
+                    <td>03:04</td>
+                  </tr>
+                  <tr>
+                    <td>#1839</td>
+                    <td><span class="badge ok">Done</span></td>
+                    <td>1.17M</td>
+                    <td>02:25</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <h3>Quality gates</h3>
+                <p>Checks attached to this dataset.</p>
+              </div>
+            </div>
+            <div class="quality-list">
+              <div class="quality-item">
+                <div class="node-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div>
+                  <h4>Row volume</h4>
+                  <p>Inside expected range.</p>
+                </div>
+                <span class="badge ok">Pass</span>
+              </div>
+
+              <div class="quality-item">
+                <div class="node-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 8v5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+                    <path d="M12 17h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M10.3 4.2 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div>
+                  <h4>Schema drift</h4>
+                  <p>One nullable field changed.</p>
+                </div>
+                <span class="badge warn">Watch</span>
+              </div>
+
+              <div class="quality-item">
+                <div class="node-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div>
+                  <h4>Freshness SLA</h4>
+                  <p>Updated within target.</p>
+                </div>
+                <span class="badge ok">Pass</span>
+              </div>
+            </div>
+          </section>
+        </aside>
+
+        <article class="panel code-panel">
+          <div class="panel-header">
+            <div>
+              <h3>Workflow source</h3>
+              <p>Readable rendering of the active YAML in this folder.</p>
+            </div>
+            <div class="tool-row" aria-label="Source actions">
+              <button class="tool-btn" type="button" aria-label="Copy source" data-toast="Source snippet copied to clipboard where supported.">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M9 9h10v12H9V9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                  <path d="M5 15H4V3h10v1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <button class="tool-btn" type="button" aria-label="Validate workflow" data-toast="Validation passed for required workflow keys.">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="m8 12 3 3 6-7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="code-layout">
+            <pre class="code-window" id="source-snippet"><code><span class="key">version</span>: v1
+<span class="key">name</span>: <span class="name">wf-customer-data-asen</span>
+<span class="key">type</span>: workflow
+<span class="key">workflow</span>:
+  <span class="key">dag</span>:
+    - <span class="key">name</span>: <span class="name">dg-customer-data</span>
+      <span class="key">spec</span>:
+        <span class="key">stack</span>: <span class="text">flare:7.0</span>
+        <span class="key">compute</span>: <span class="text">runnable-default</span>
+        <span class="key">inputs</span>:
+          - <span class="key">dataset</span>: <span class="text">dataos://depottestas:public/product_data?acl=r</span>
+            <span class="key">format</span>: jdbc
+        <span class="key">steps</span>:
+          - <span class="key">sql</span>: <span class="text">SELECT * FROM customer_data</span>
+        <span class="key">outputs</span>:
+          - <span class="key">dataset</span>: <span class="text">dataos://depottestas:public/customer_data_asen?acl=rw</span>
+            <span class="key">saveMode</span>: overwrite</code></pre>
+            <aside class="inspector" aria-label="Workflow details">
+              <h3>Inspector</h3>
+              <div class="inspector-row">
+                <span>Workflow</span>
+                <strong>wf-customer-data-asen</strong>
+              </div>
+              <div class="inspector-row">
+                <span>Dataset</span>
+                <strong>customer_data_asen</strong>
+              </div>
+              <div class="inspector-row">
+                <span>Stack</span>
+                <strong>flare:7.0</strong>
+              </div>
+              <div class="inspector-row">
+                <span>Driver</span>
+                <strong>org.postgresql.Driver</strong>
+              </div>
+              <div class="inspector-row">
+                <span>Mode</span>
+                <strong>overwrite</strong>
+              </div>
+            </aside>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" role="status" aria-live="polite" id="toast"></div>
+
+  <script>
+    const toast = document.querySelector("#toast");
+    const rangeButtons = document.querySelectorAll("[data-range]");
+    const metrics = {
+      rows: document.querySelector('[data-metric="rows"]'),
+      freshness: document.querySelector('[data-metric="freshness"]'),
+      quality: document.querySelector('[data-metric="quality"]'),
+      cost: document.querySelector('[data-metric="cost"]')
+    };
+
+    const values = {
+      today: ["1.28M", "4m", "99.2%", "$2.41"],
+      week: ["8.74M", "6m", "98.9%", "$16.80"],
+      month: ["35.6M", "7m", "99.0%", "$69.20"]
+    };
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 2600);
+    }
+
+    rangeButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        rangeButtons.forEach((item) => item.classList.remove("active"));
+        button.classList.add("active");
+        const next = values[button.dataset.range];
+        [metrics.rows, metrics.freshness, metrics.quality, metrics.cost].forEach((metric, index) => {
+          metric.animate(
+            [{ transform: "translateY(0)", opacity: 1 }, { transform: "translateY(-8px)", opacity: 0 }],
+            { duration: 120, easing: "ease-out" }
+          ).onfinish = () => {
+            metric.textContent = next[index];
+            metric.animate(
+              [{ transform: "translateY(8px)", opacity: 0 }, { transform: "translateY(0)", opacity: 1 }],
+              { duration: 180, easing: "ease-out" }
+            );
+          };
+        });
+      });
+    });
+
+    document.querySelectorAll("[data-toast]").forEach((button) => {
+      button.addEventListener("click", () => {
+        showToast(button.dataset.toast);
+        if (button.getAttribute("aria-label") === "Copy source" && navigator.clipboard) {
+          navigator.clipboard.writeText(document.querySelector("#source-snippet").innerText).catch(() => {});
+        }
+      });
+    });
+
+    document.querySelector("[data-run]").addEventListener("click", () => {
+      showToast("Manual run queued for wf-customer-data-asen.");
+      document.querySelector(".run-card h3").textContent = "Queued just now";
+    });
+
+    document.querySelector("[data-promote]").addEventListener("click", () => {
+      showToast("Promotion request staged for customer_data_asen.");
+    });
+  </script>
+</body>
+</html>

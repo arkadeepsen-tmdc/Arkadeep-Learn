@@ -12,8 +12,12 @@ depot:
   external: true
   secrets:
     - name: postgres-as-r
+      keys:
+        - postgres-as-r
       allkeys: true
     - name: postgres-as-rw
+      keys:
+        - postgres-as-rw
       allkeys: true
     
   jdbc:                        

@@ -7,5 +7,5 @@ instance-secret:
   type: key-value-properties
   acl: rw
   data:
-    username: postgres
-    password: M9h8I5c4lrQwEgoE0NQR8ZIhz
+    username: "postgres"
+    password: "M9h8I5c4lrQwEgoE0NQR8ZIhz"
